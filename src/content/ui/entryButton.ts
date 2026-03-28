@@ -10,7 +10,14 @@ export function createEntryButton(
 }
 
 export function injectEntryButton(button: HTMLElement): boolean {
-  // New GitHub React UI: toolbar section
+  // New GitHub React UI: insert before the "Submit review" button area
+  const reviewBtn = document.querySelector('[class*="ReviewMenuButton-module"]');
+  if (reviewBtn) {
+    reviewBtn.parentElement?.insertBefore(button, reviewBtn);
+    return true;
+  }
+
+  // New GitHub React UI: fallback to toolbar
   const toolbar = document.querySelector('[class*="PullRequestFilesToolbar-module__toolbar"]');
   if (toolbar) {
     toolbar.appendChild(button);
