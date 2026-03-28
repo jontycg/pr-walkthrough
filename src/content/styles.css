@@ -89,10 +89,18 @@
   color: #8b949e;
   margin-top: 2px;
 }
-.prn-sidebar-exit {
+.prn-sidebar-nav {
+  display: flex;
+  gap: 8px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid #30363d;
+}
+.prn-sidebar-nav .prn-nav-btn {
+  flex: 1;
+}
+.prn-sidebar-exit {
+  margin-top: 8px;
 }
 .prn-exit-btn {
   background: transparent;

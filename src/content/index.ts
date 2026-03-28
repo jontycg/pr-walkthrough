@@ -35,6 +35,14 @@ function enterNarrativeMode(): void {
   // Create and inject sidebar
   state.sidebarEl = createSidebar(state.narrative.steps, state.currentStep, {
     onStepClick: goToStep,
+    onPrev: () => goToStep(state.currentStep - 1),
+    onNext: () => {
+      if (state.currentStep === state.narrative!.steps.length) {
+        showCompletion();
+      } else {
+        goToStep(state.currentStep + 1);
+      }
+    },
     onExit: exitNarrativeMode,
   });
   injectSidebar(state.sidebarEl);
@@ -68,8 +76,8 @@ function goToStep(stepNumber: number): void {
   removeCompletionScreen();
   showStep(step);
 
-  if (state.sidebarEl) {
-    updateSidebarActiveStep(state.sidebarEl, stepNumber);
+  if (state.sidebarEl && state.narrative) {
+    updateSidebarActiveStep(state.sidebarEl, stepNumber, state.narrative.steps.length);
   }
 }
 
@@ -91,6 +99,7 @@ function showStep(step: Step): void {
   });
   injectStepper(stepper);
   filterFiles(step.files);
+  window.scrollTo({ top: 0 });
 }
 
 function showCompletion(): void {

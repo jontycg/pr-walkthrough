@@ -2,6 +2,8 @@ import { Step } from '../../types';
 
 export interface SidebarCallbacks {
   onStepClick: (stepNumber: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
   onExit: () => void;
 }
 
@@ -45,6 +47,24 @@ export function createSidebar(
     sidebar.appendChild(stepEl);
   }
 
+  const navSection = document.createElement('div');
+  navSection.className = 'prn-sidebar-nav';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'prn-nav-btn prn-sidebar-prev';
+  prevBtn.innerHTML = '&larr; Prev';
+  prevBtn.disabled = activeStep === 1;
+  prevBtn.addEventListener('click', callbacks.onPrev);
+  navSection.appendChild(prevBtn);
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'prn-nav-btn prn-nav-btn--next prn-sidebar-next';
+  nextBtn.innerHTML = activeStep === steps.length ? 'Finish &rarr;' : 'Next &rarr;';
+  nextBtn.addEventListener('click', callbacks.onNext);
+  navSection.appendChild(nextBtn);
+
+  sidebar.appendChild(navSection);
+
   const exitSection = document.createElement('div');
   exitSection.className = 'prn-sidebar-exit';
   const exitBtn = document.createElement('button');
@@ -57,13 +77,18 @@ export function createSidebar(
   return sidebar;
 }
 
-export function updateSidebarActiveStep(sidebar: HTMLElement, stepNumber: number): void {
+export function updateSidebarActiveStep(sidebar: HTMLElement, stepNumber: number, totalSteps: number): void {
   sidebar.querySelectorAll('.prn-sidebar-step').forEach(el => {
     el.classList.remove('prn-sidebar-step--active');
     if (el.getAttribute('data-prn-step') === String(stepNumber)) {
       el.classList.add('prn-sidebar-step--active');
     }
   });
+
+  const prevBtn = sidebar.querySelector('.prn-sidebar-prev') as HTMLButtonElement | null;
+  const nextBtn = sidebar.querySelector('.prn-sidebar-next') as HTMLButtonElement | null;
+  if (prevBtn) prevBtn.disabled = stepNumber === 1;
+  if (nextBtn) nextBtn.innerHTML = stepNumber === totalSteps ? 'Finish &rarr;' : 'Next &rarr;';
 }
 
 export function injectSidebar(sidebar: HTMLElement): boolean {
