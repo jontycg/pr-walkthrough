@@ -1,4 +1,4 @@
-# PR Narrative
+# PR Walkthrough
 
 A browser extension that transforms PR reviews into guided tours. Instead of reviewing a flat list of changed files, PR authors write a narrative comment that groups files into logical steps with commentary, and reviewers step through the PR in the order the author intended.
 
@@ -8,7 +8,7 @@ AI-assisted development has made writing code dramatically faster, but PR review
 
 ## The Solution
 
-PR Narrative lets authors add a structured comment to their PR (prefixed with `## PR Narrative`) that breaks the changes into steps. Each step groups related files and includes a brief explanation of what to focus on. The extension then:
+PR Walkthrough lets authors add a structured comment to their PR (prefixed with `## PR Walkthrough`) that breaks the changes into steps. Each step groups related files and includes a brief explanation of what to focus on. The extension then:
 
 - Adds a **guided tour UI** to GitHub's Files Changed tab
 - **Filters the native diff view** to show only the files relevant to the current step — all GitHub functionality (commenting, suggesting changes, conversations) works as normal
@@ -20,7 +20,7 @@ PR Narrative lets authors add a structured comment to their PR (prefixed with `#
 PR authors add a comment to their PR like this:
 
 ```
-## PR Narrative
+## PR Walkthrough
 
 ### API route and controller
 Brief description of what to focus on here.

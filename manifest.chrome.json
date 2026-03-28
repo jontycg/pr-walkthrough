@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PR Narrative",
+  "name": "PR Walkthrough",
   "version": "0.1.0",
   "description": "Guided tours through GitHub pull requests",
   "content_scripts": [

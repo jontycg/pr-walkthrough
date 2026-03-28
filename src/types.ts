@@ -9,7 +9,7 @@ export interface Step {
   files: string[];
 }
 
-export interface NarrativeData {
+export interface WalkthroughData {
   /** All steps in document order */
   steps: Step[];
   /** All unique file paths across all steps */

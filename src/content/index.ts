@@ -1,5 +1,5 @@
-import { NarrativeData, Step } from '../types';
-import { extractPRContext, fetchNarrative } from './api';
+import { WalkthroughData, Step } from '../types';
+import { extractPRContext, fetchWalkthrough } from './api';
 import { filterFiles, showAllFiles, getAllPRFilePaths } from './filter';
 import { createEntryButton, injectEntryButton, removeEntryButton } from './ui/entryButton';
 import { createSidebar, updateSidebarActiveStep, injectSidebar, removeSidebar } from './ui/sidebar';
@@ -12,46 +12,46 @@ import {
 } from './ui/orphans';
 
 interface State {
-  narrative: NarrativeData | null;
+  walkthrough: WalkthroughData | null;
   currentStep: number;
   active: boolean;
   sidebarEl: HTMLElement | null;
 }
 
 const state: State = {
-  narrative: null,
+  walkthrough: null,
   currentStep: 1,
   active: false,
   sidebarEl: null,
 };
 
-function enterNarrativeMode(): void {
-  if (!state.narrative || state.narrative.steps.length === 0) return;
+function enterWalkthroughMode(): void {
+  if (!state.walkthrough || state.walkthrough.steps.length === 0) return;
 
   state.active = true;
   state.currentStep = 1;
   removeEntryButton();
 
   // Create and inject sidebar
-  state.sidebarEl = createSidebar(state.narrative.steps, state.currentStep, {
+  state.sidebarEl = createSidebar(state.walkthrough.steps, state.currentStep, {
     onStepClick: goToStep,
     onPrev: () => goToStep(state.currentStep - 1),
     onNext: () => {
-      if (state.currentStep === state.narrative!.steps.length) {
+      if (state.currentStep === state.walkthrough!.steps.length) {
         showCompletion();
       } else {
         goToStep(state.currentStep + 1);
       }
     },
-    onExit: exitNarrativeMode,
+    onExit: exitWalkthroughMode,
   });
   injectSidebar(state.sidebarEl);
 
   // Show first step
-  showStep(state.narrative.steps[0]);
+  showStep(state.walkthrough.steps[0]);
 }
 
-function exitNarrativeMode(): void {
+function exitWalkthroughMode(): void {
   state.active = false;
   removeSidebar();
   removeStepper();
@@ -60,37 +60,37 @@ function exitNarrativeMode(): void {
   state.sidebarEl = null;
 
   // Re-inject entry button
-  if (state.narrative) {
-    const btn = createEntryButton(state.narrative.steps.length, enterNarrativeMode);
+  if (state.walkthrough) {
+    const btn = createEntryButton(state.walkthrough.steps.length, enterWalkthroughMode);
     injectEntryButton(btn);
   }
 }
 
 function goToStep(stepNumber: number): void {
-  if (!state.narrative) return;
+  if (!state.walkthrough) return;
 
-  const step = state.narrative.steps.find(s => s.number === stepNumber);
+  const step = state.walkthrough.steps.find(s => s.number === stepNumber);
   if (!step) return;
 
   state.currentStep = stepNumber;
   removeCompletionScreen();
   showStep(step);
 
-  if (state.sidebarEl && state.narrative) {
-    updateSidebarActiveStep(state.sidebarEl, stepNumber, state.narrative.steps.length);
+  if (state.sidebarEl && state.walkthrough) {
+    updateSidebarActiveStep(state.sidebarEl, stepNumber, state.walkthrough.steps.length);
   }
 }
 
 function showStep(step: Step): void {
-  if (!state.narrative) return;
+  if (!state.walkthrough) return;
 
   removeStepper();
   removeCompletionScreen();
 
-  const stepper = createStepper(step, state.narrative.steps.length, {
+  const stepper = createStepper(step, state.walkthrough.steps.length, {
     onPrev: () => goToStep(state.currentStep - 1),
     onNext: () => {
-      if (state.currentStep === state.narrative!.steps.length) {
+      if (state.currentStep === state.walkthrough!.steps.length) {
         showCompletion();
       } else {
         goToStep(state.currentStep + 1);
@@ -103,7 +103,7 @@ function showStep(step: Step): void {
 }
 
 function showCompletion(): void {
-  if (!state.narrative) return;
+  if (!state.walkthrough) return;
 
   removeStepper();
   showAllFiles();
@@ -111,15 +111,15 @@ function showCompletion(): void {
   filterFiles([]);
 
   const prFiles = getAllPRFilePaths();
-  const orphans = computeOrphans(prFiles, state.narrative.allFiles);
+  const orphans = computeOrphans(prFiles, state.walkthrough.allFiles);
 
   const screen = createCompletionScreen(
-    state.narrative.steps.length,
-    state.narrative.allFiles.length,
+    state.walkthrough.steps.length,
+    state.walkthrough.allFiles.length,
     orphans,
     {
-      onBack: () => goToStep(state.narrative!.steps.length),
-      onShowAll: exitNarrativeMode,
+      onBack: () => goToStep(state.walkthrough!.steps.length),
+      onShowAll: exitWalkthroughMode,
     }
   );
   injectCompletionScreen(screen);
@@ -133,32 +133,32 @@ function showCompletion(): void {
 }
 
 async function init(): Promise<void> {
-  console.log('[PR Narrative] init starting');
+  console.log('[PR Walkthrough] init starting');
   const ctx = extractPRContext();
   if (!ctx) {
-    console.log('[PR Narrative] no PR context found in URL:', window.location.pathname);
+    console.log('[PR Walkthrough] no PR context found in URL:', window.location.pathname);
     return;
   }
-  console.log('[PR Narrative] PR context:', ctx);
+  console.log('[PR Walkthrough] PR context:', ctx);
 
-  const narrative = await fetchNarrative(ctx);
-  if (!narrative) {
-    console.log('[PR Narrative] no narrative comment found');
+  const walkthrough = await fetchWalkthrough(ctx);
+  if (!walkthrough) {
+    console.log('[PR Walkthrough] no walkthrough comment found');
     return;
   }
-  if (narrative.steps.length === 0) {
-    console.log('[PR Narrative] narrative found but has 0 steps');
+  if (walkthrough.steps.length === 0) {
+    console.log('[PR Walkthrough] walkthrough found but has 0 steps');
     return;
   }
-  console.log('[PR Narrative] narrative found with', narrative.steps.length, 'steps:', narrative);
+  console.log('[PR Walkthrough] walkthrough found with', walkthrough.steps.length, 'steps:', walkthrough);
 
-  state.narrative = narrative;
+  state.walkthrough = walkthrough;
 
-  const btn = createEntryButton(narrative.steps.length, enterNarrativeMode);
+  const btn = createEntryButton(walkthrough.steps.length, enterWalkthroughMode);
   const injected = injectEntryButton(btn);
-  console.log('[PR Narrative] button injected:', injected);
+  console.log('[PR Walkthrough] button injected:', injected);
   if (!injected) {
-    console.log('[PR Narrative] could not find injection point, appending to body as fallback');
+    console.log('[PR Walkthrough] could not find injection point, appending to body as fallback');
     btn.style.position = 'fixed';
     btn.style.top = '10px';
     btn.style.right = '10px';
@@ -172,11 +172,11 @@ init();
 
 // Handle GitHub SPA navigation (Turbo)
 document.addEventListener('turbo:load', () => {
-  // Clean up any active narrative mode
+  // Clean up any active walkthrough mode
   if (state.active) {
-    exitNarrativeMode();
+    exitWalkthroughMode();
   }
-  state.narrative = null;
+  state.walkthrough = null;
   removeEntryButton();
   init();
 });

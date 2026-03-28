@@ -1,5 +1,5 @@
 {
-  "name": "pr-narrative",
+  "name": "pr-walkthrough",
   "version": "0.1.0",
   "description": "Browser extension that transforms PR reviews into guided tours",
   "private": true,

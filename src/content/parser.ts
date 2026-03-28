@@ -1,23 +1,23 @@
-import { Step, NarrativeData } from '../types';
+import { Step, WalkthroughData } from '../types';
 
-const NARRATIVE_PREFIX = /^\s*## PR Narrative\s*$/m;
+const WALKTHROUGH_PREFIX = /^\s*## PR Walkthrough\s*$/m;
 const STEP_HEADING = /^### (.+)$/;
 const FILE_ITEM = /^- `([^`]+)`/;
 
-export function isNarrativeComment(body: string): boolean {
-  return NARRATIVE_PREFIX.test(body);
+export function isWalkthroughComment(body: string): boolean {
+  return WALKTHROUGH_PREFIX.test(body);
 }
 
-export function parseNarrativeComment(body: string): NarrativeData {
+export function parseWalkthroughComment(body: string): WalkthroughData {
   const lines = body.split('\n');
   const steps: Step[] = [];
   let currentStep: { title: string; descriptionLines: string[]; files: string[] } | null = null;
   let pastHeader = false;
 
   for (const line of lines) {
-    // Skip until we're past the ## PR Narrative header
+    // Skip until we're past the ## PR Walkthrough header
     if (!pastHeader) {
-      if (NARRATIVE_PREFIX.test(line)) {
+      if (WALKTHROUGH_PREFIX.test(line)) {
         pastHeader = true;
       }
       continue;

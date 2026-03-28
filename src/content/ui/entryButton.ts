@@ -4,7 +4,7 @@ export function createEntryButton(
 ): HTMLElement {
   const btn = document.createElement('button');
   btn.className = 'prn-start-btn';
-  btn.innerHTML = `&#9654; Start PR Narrative (${stepCount} steps)`;
+  btn.innerHTML = `&#9654; Start PR Walkthrough (${stepCount} steps)`;
   btn.addEventListener('click', onClick);
   return btn;
 }

@@ -1,6 +1,6 @@
-export function computeOrphans(prFiles: string[], narrativeFiles: string[]): string[] {
+export function computeOrphans(prFiles: string[], walkthroughFiles: string[]): string[] {
   return prFiles.filter(
-    prFile => !narrativeFiles.some(nf => prFile.endsWith(nf))
+    prFile => !walkthroughFiles.some(nf => prFile.endsWith(nf))
   );
 }
 
@@ -28,7 +28,7 @@ export function createCompletionScreen(
 
   const title = document.createElement('div');
   title.className = 'prn-completion-title';
-  title.textContent = 'Narrative complete';
+  title.textContent = 'Walkthrough complete';
   completion.appendChild(title);
 
   const summary = document.createElement('p');
@@ -60,7 +60,7 @@ export function createCompletionScreen(
 
     const orphanTitle = document.createElement('div');
     orphanTitle.className = 'prn-orphans-title';
-    orphanTitle.textContent = `\u26A0 ${orphanFiles.length} file${orphanFiles.length !== 1 ? 's' : ''} not covered by the narrative`;
+    orphanTitle.textContent = `\u26A0 ${orphanFiles.length} file${orphanFiles.length !== 1 ? 's' : ''} not covered by the walkthrough`;
     orphans.appendChild(orphanTitle);
 
     for (const file of orphanFiles) {

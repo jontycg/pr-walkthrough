@@ -17,7 +17,7 @@ export function createSidebar(
 
   const title = document.createElement('div');
   title.className = 'prn-sidebar-title';
-  title.textContent = 'PR Narrative';
+  title.textContent = 'PR Walkthrough';
   sidebar.appendChild(title);
 
   for (const step of steps) {
@@ -69,7 +69,7 @@ export function createSidebar(
   exitSection.className = 'prn-sidebar-exit';
   const exitBtn = document.createElement('button');
   exitBtn.className = 'prn-exit-btn';
-  exitBtn.textContent = 'Exit Narrative';
+  exitBtn.textContent = 'Exit Walkthrough';
   exitBtn.addEventListener('click', callbacks.onExit);
   exitSection.appendChild(exitBtn);
   sidebar.appendChild(exitSection);
