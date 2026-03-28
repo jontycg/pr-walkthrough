@@ -2,9 +2,9 @@ import { PRContext, NarrativeData } from '../types';
 import { isNarrativeComment, parseNarrativeComment } from './parser';
 
 export function extractPRContext(): PRContext | null {
-  // URL pattern: github.com/:owner/:repo/pull/:number/files
+  // URL pattern: github.com/:owner/:repo/pull/:number/files or /changes
   const match = window.location.pathname.match(
-    /^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/files/
+    /^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/(?:files|changes)/
   );
   if (!match) return null;
   return {
