@@ -10,24 +10,24 @@ export function createEntryButton(
 }
 
 export function injectEntryButton(button: HTMLElement): boolean {
-  // GitHub's PR diff toolbar: .pr-review-tools is the right-side actions area
+  // New GitHub React UI: toolbar section
+  const toolbar = document.querySelector('[class*="PullRequestFilesToolbar-module__toolbar"]');
+  if (toolbar) {
+    toolbar.appendChild(button);
+    return true;
+  }
+
+  // Legacy: .pr-review-tools
   const reviewTools = document.querySelector('.pr-review-tools');
   if (reviewTools) {
     reviewTools.prepend(button);
     return true;
   }
 
-  // Fallback: the diffbar itself
+  // Legacy: .diffbar
   const diffbar = document.querySelector('.diffbar');
   if (diffbar) {
     diffbar.appendChild(button);
-    return true;
-  }
-
-  // Fallback: the pr-toolbar
-  const prToolbar = document.querySelector('.pr-toolbar');
-  if (prToolbar) {
-    prToolbar.appendChild(button);
     return true;
   }
 

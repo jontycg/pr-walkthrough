@@ -59,14 +59,21 @@ export function createStepper(
 }
 
 export function injectStepper(stepper: HTMLElement): boolean {
-  // Insert above the diff container — #files is the main diff view wrapper
+  // New GitHub React UI: insert before the progressive diffs list
+  const diffsList = document.querySelector('[data-testid="progressive-diffs-list"]');
+  if (diffsList) {
+    diffsList.insertBefore(stepper, diffsList.firstChild);
+    return true;
+  }
+
+  // Legacy: #files diff view
   const diffView = document.querySelector('#files.diff-view');
   if (diffView) {
     diffView.insertBefore(stepper, diffView.firstChild);
     return true;
   }
 
-  // Fallback: insert before the progressive container
+  // Legacy: progressive container
   const progressive = document.querySelector('.js-diff-progressive-container');
   if (progressive) {
     progressive.parentElement?.insertBefore(stepper, progressive);

@@ -6,7 +6,24 @@ interface FileElement {
 function getAllFileElements(): FileElement[] {
   const results: FileElement[] = [];
 
-  // Try copilot-diff-entry elements first (newer GitHub DOM)
+  // New GitHub React UI: div[id^="diff-"] containers with file path in heading link
+  const diffContainers = document.querySelectorAll('div[id^="diff-"][role="region"]');
+  if (diffContainers.length > 0) {
+    for (const el of diffContainers) {
+      // File path is in: h3 > a > code within the diff header
+      const codeEl = el.querySelector('h3 a code');
+      if (codeEl) {
+        // GitHub wraps the path with invisible characters (LRM marks), strip them
+        const path = (codeEl.textContent || '').replace(/[\u200E\u200F\u200B]/g, '').trim();
+        if (path) {
+          results.push({ element: el as HTMLElement, path });
+        }
+      }
+    }
+    return results;
+  }
+
+  // Legacy GitHub UI: copilot-diff-entry elements
   const copilotEntries = document.querySelectorAll('copilot-diff-entry[data-file-path]');
   if (copilotEntries.length > 0) {
     for (const el of copilotEntries) {
@@ -18,7 +35,7 @@ function getAllFileElements(): FileElement[] {
     return results;
   }
 
-  // Fall back to div.file with data-tagsearch-path
+  // Oldest fallback: div.file with data-tagsearch-path
   const fileElements = document.querySelectorAll('.file[data-tagsearch-path]');
   for (const el of fileElements) {
     results.push({

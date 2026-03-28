@@ -77,6 +77,12 @@ export function createCompletionScreen(
 }
 
 export function injectCompletionScreen(screen: HTMLElement): boolean {
+  const diffsList = document.querySelector('[data-testid="progressive-diffs-list"]');
+  if (diffsList) {
+    diffsList.insertBefore(screen, diffsList.firstChild);
+    return true;
+  }
+
   const diffView = document.querySelector('#files.diff-view');
   if (diffView) {
     diffView.insertBefore(screen, diffView.firstChild);
