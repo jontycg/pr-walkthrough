@@ -66,10 +66,35 @@ export function updateSidebarActiveStep(sidebar: HTMLElement, stepNumber: number
   });
 }
 
-export function injectSidebar(sidebar: HTMLElement): void {
+export function injectSidebar(sidebar: HTMLElement): boolean {
+  // New GitHub React UI: inject into the PageLayoutContent alongside the file tree pane
+  // This matches the same level as GitHub's own file browser
+  const pageLayoutContent = document.querySelector('[class*="prc-PageLayout-PageLayoutContent"]');
+  if (pageLayoutContent) {
+    const contentWrapper = pageLayoutContent.querySelector('[class*="prc-PageLayout-ContentWrapper"]');
+    if (contentWrapper) {
+      pageLayoutContent.insertBefore(sidebar, contentWrapper);
+      return true;
+    }
+  }
+
+  // Legacy: inject alongside the diff area
+  const diffArea =
+    document.querySelector('#files.diff-view') ||
+    document.querySelector('.js-diff-progressive-container');
+
+  if (diffArea?.parentElement) {
+    diffArea.parentElement.classList.add('prn-has-sidebar');
+    diffArea.parentElement.insertBefore(sidebar, diffArea);
+    return true;
+  }
+
+  // Fallback: append to body
   document.body.appendChild(sidebar);
+  return false;
 }
 
 export function removeSidebar(): void {
+  document.querySelector('.prn-has-sidebar')?.classList.remove('prn-has-sidebar');
   document.querySelector('.prn-sidebar')?.remove();
 }

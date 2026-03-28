@@ -25,23 +25,12 @@ const state: State = {
   sidebarEl: null,
 };
 
-function getLayoutContainer(): HTMLElement | null {
-  // The main content area that needs to shift when sidebar opens
-  return document.querySelector(
-    '[data-target="diff-layout.mainContainer"], .Layout-main, .repository-content'
-  );
-}
-
 function enterNarrativeMode(): void {
   if (!state.narrative || state.narrative.steps.length === 0) return;
 
   state.active = true;
   state.currentStep = 1;
   removeEntryButton();
-
-  // Shift layout for sidebar
-  const layout = getLayoutContainer();
-  if (layout) layout.classList.add('prn-layout-shifted');
 
   // Create and inject sidebar
   state.sidebarEl = createSidebar(state.narrative.steps, state.currentStep, {
@@ -61,10 +50,6 @@ function exitNarrativeMode(): void {
   removeCompletionScreen();
   showAllFiles();
   state.sidebarEl = null;
-
-  // Restore layout
-  const layout = getLayoutContainer();
-  if (layout) layout.classList.remove('prn-layout-shifted');
 
   // Re-inject entry button
   if (state.narrative) {
