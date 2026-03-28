@@ -16,6 +16,7 @@ interface State {
   currentStep: number;
   active: boolean;
   sidebarEl: HTMLElement | null;
+  fileTreeListener: ((e: Event) => void) | null;
 }
 
 const state: State = {
@@ -23,6 +24,7 @@ const state: State = {
   currentStep: 1,
   active: false,
   sidebarEl: null,
+  fileTreeListener: null,
 };
 
 function enterWalkthroughMode(): void {
@@ -47,6 +49,13 @@ function enterWalkthroughMode(): void {
   });
   injectSidebar(state.sidebarEl);
 
+  // Exit walkthrough if user clicks a file in GitHub's file tree
+  const fileTree = document.querySelector('#pr-file-tree');
+  if (fileTree) {
+    state.fileTreeListener = () => exitWalkthroughMode();
+    fileTree.addEventListener('click', state.fileTreeListener);
+  }
+
   // Show first step
   showStep(state.walkthrough.steps[0]);
 }
@@ -58,6 +67,13 @@ function exitWalkthroughMode(): void {
   removeCompletionScreen();
   showAllFiles();
   state.sidebarEl = null;
+
+  // Remove file tree click listener
+  if (state.fileTreeListener) {
+    const fileTree = document.querySelector('#pr-file-tree');
+    if (fileTree) fileTree.removeEventListener('click', state.fileTreeListener);
+    state.fileTreeListener = null;
+  }
 
   // Re-inject entry button
   if (state.walkthrough) {
