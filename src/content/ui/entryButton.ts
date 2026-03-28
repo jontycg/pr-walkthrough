@@ -42,6 +42,5 @@ export function injectEntryButton(button: HTMLElement): boolean {
 }
 
 export function removeEntryButton(): void {
-  const existing = document.querySelector('.prn-start-btn');
-  if (existing) existing.remove();
+  document.querySelectorAll('.prn-start-btn').forEach(el => el.remove());
 }
