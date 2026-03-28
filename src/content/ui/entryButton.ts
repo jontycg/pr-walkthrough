@@ -10,20 +10,24 @@ export function createEntryButton(
 }
 
 export function injectEntryButton(button: HTMLElement): boolean {
-  // GitHub's Files Changed tab has a toolbar/actions area at the top.
-  // Look for the diff header area to inject our button.
-  const diffHeader = document.querySelector(
-    '#diff-header, .pr-review-tools, [data-target="diff-layout.headerContainer"]'
-  );
-  if (diffHeader) {
-    diffHeader.appendChild(button);
+  // GitHub's PR diff toolbar: .pr-review-tools is the right-side actions area
+  const reviewTools = document.querySelector('.pr-review-tools');
+  if (reviewTools) {
+    reviewTools.prepend(button);
     return true;
   }
 
-  // Fallback: look for the file filter actions bar
-  const actionsBar = document.querySelector('.diffbar, .diff-view > .d-flex');
-  if (actionsBar) {
-    actionsBar.appendChild(button);
+  // Fallback: the diffbar itself
+  const diffbar = document.querySelector('.diffbar');
+  if (diffbar) {
+    diffbar.appendChild(button);
+    return true;
+  }
+
+  // Fallback: the pr-toolbar
+  const prToolbar = document.querySelector('.pr-toolbar');
+  if (prToolbar) {
+    prToolbar.appendChild(button);
     return true;
   }
 

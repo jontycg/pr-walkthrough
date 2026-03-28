@@ -1,6 +1,6 @@
 import { NarrativeData, Step } from '../types';
 import { extractPRContext, fetchNarrative } from './api';
-import { filterFiles, showAllFiles } from './filter';
+import { filterFiles, showAllFiles, getAllPRFilePaths } from './filter';
 import { createEntryButton, injectEntryButton, removeEntryButton } from './ui/entryButton';
 import { createSidebar, updateSidebarActiveStep, injectSidebar, removeSidebar } from './ui/sidebar';
 import { createStepper, injectStepper, removeStepper } from './ui/stepper';
@@ -25,16 +25,10 @@ const state: State = {
   sidebarEl: null,
 };
 
-function getAllPRFilePaths(): string[] {
-  return Array.from(document.querySelectorAll('.file[data-tagsearch-path]'))
-    .map(el => el.getAttribute('data-tagsearch-path') || '')
-    .filter(Boolean);
-}
-
 function getLayoutContainer(): HTMLElement | null {
   // The main content area that needs to shift when sidebar opens
   return document.querySelector(
-    '.repository-content, [data-target="diff-layout.layoutContainer"], .diff-view'
+    '[data-target="diff-layout.mainContainer"], .Layout-main, .repository-content'
   );
 }
 
@@ -145,16 +139,38 @@ function showCompletion(): void {
 }
 
 async function init(): Promise<void> {
+  console.log('[PR Narrative] init starting');
   const ctx = extractPRContext();
-  if (!ctx) return;
+  if (!ctx) {
+    console.log('[PR Narrative] no PR context found in URL:', window.location.pathname);
+    return;
+  }
+  console.log('[PR Narrative] PR context:', ctx);
 
   const narrative = await fetchNarrative(ctx);
-  if (!narrative || narrative.steps.length === 0) return;
+  if (!narrative) {
+    console.log('[PR Narrative] no narrative comment found');
+    return;
+  }
+  if (narrative.steps.length === 0) {
+    console.log('[PR Narrative] narrative found but has 0 steps');
+    return;
+  }
+  console.log('[PR Narrative] narrative found with', narrative.steps.length, 'steps:', narrative);
 
   state.narrative = narrative;
 
   const btn = createEntryButton(narrative.steps.length, enterNarrativeMode);
-  injectEntryButton(btn);
+  const injected = injectEntryButton(btn);
+  console.log('[PR Narrative] button injected:', injected);
+  if (!injected) {
+    console.log('[PR Narrative] could not find injection point, appending to body as fallback');
+    btn.style.position = 'fixed';
+    btn.style.top = '10px';
+    btn.style.right = '10px';
+    btn.style.zIndex = '9999';
+    document.body.appendChild(btn);
+  }
 }
 
 // Initialize on page load

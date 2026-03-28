@@ -77,14 +77,18 @@ export function createCompletionScreen(
 }
 
 export function injectCompletionScreen(screen: HTMLElement): boolean {
-  const diffContainer = document.querySelector(
-    '#diff, [data-target="diff-layout.mainContainer"], .js-diff-progressive-container'
-  )?.parentElement;
-
-  if (diffContainer) {
-    diffContainer.insertBefore(screen, diffContainer.firstChild);
+  const diffView = document.querySelector('#files.diff-view');
+  if (diffView) {
+    diffView.insertBefore(screen, diffView.firstChild);
     return true;
   }
+
+  const progressive = document.querySelector('.js-diff-progressive-container');
+  if (progressive) {
+    progressive.parentElement?.insertBefore(screen, progressive);
+    return true;
+  }
+
   return false;
 }
 

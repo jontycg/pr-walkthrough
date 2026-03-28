@@ -59,15 +59,20 @@ export function createStepper(
 }
 
 export function injectStepper(stepper: HTMLElement): boolean {
-  // Insert above the diff container
-  const diffContainer = document.querySelector(
-    '#diff, [data-target="diff-layout.mainContainer"], .js-diff-progressive-container'
-  )?.parentElement;
-
-  if (diffContainer) {
-    diffContainer.insertBefore(stepper, diffContainer.firstChild);
+  // Insert above the diff container — #files is the main diff view wrapper
+  const diffView = document.querySelector('#files.diff-view');
+  if (diffView) {
+    diffView.insertBefore(stepper, diffView.firstChild);
     return true;
   }
+
+  // Fallback: insert before the progressive container
+  const progressive = document.querySelector('.js-diff-progressive-container');
+  if (progressive) {
+    progressive.parentElement?.insertBefore(stepper, progressive);
+    return true;
+  }
+
   return false;
 }
 
