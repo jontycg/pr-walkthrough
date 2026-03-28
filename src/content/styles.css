@@ -1,1 +1,218 @@
-/* PR Narrative styles — all classes prefixed with prn- */
+/* PR Narrative — all classes prefixed with prn- */
+
+/* Entry button */
+.prn-start-btn {
+  background: #238636;
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+.prn-start-btn:hover {
+  background: #2ea043;
+}
+
+/* Sidebar */
+.prn-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100vh;
+  background: #0d1117;
+  border-right: 1px solid #30363d;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 16px 12px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+.prn-sidebar-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #8b949e;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.prn-sidebar-step {
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.prn-sidebar-step:hover {
+  background: #161b22;
+}
+.prn-sidebar-step--active {
+  background: rgba(31, 111, 235, 0.13);
+  border-left-color: #58a6ff;
+}
+.prn-sidebar-step-number {
+  font-size: 12px;
+  color: #8b949e;
+}
+.prn-sidebar-step--active .prn-sidebar-step-number {
+  color: #58a6ff;
+  font-weight: 600;
+}
+.prn-sidebar-step-title {
+  font-size: 13px;
+  color: #c9d1d9;
+  margin-top: 2px;
+}
+.prn-sidebar-step--active .prn-sidebar-step-title {
+  color: #e6edf3;
+}
+.prn-sidebar-step-files {
+  font-size: 11px;
+  color: #8b949e;
+  margin-top: 2px;
+}
+.prn-sidebar-exit {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #30363d;
+}
+.prn-exit-btn {
+  background: transparent;
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+}
+.prn-exit-btn:hover {
+  background: rgba(248, 81, 73, 0.1);
+}
+
+/* Step header */
+.prn-step-header {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+.prn-step-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.prn-step-label {
+  font-size: 12px;
+  color: #58a6ff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.prn-step-title {
+  font-size: 16px;
+  color: #e6edf3;
+  margin: 4px 0 0 0;
+  font-weight: 600;
+}
+.prn-step-description {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.prn-step-nav {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 16px;
+}
+.prn-nav-btn {
+  background: #21262d;
+  color: #c9d1d9;
+  border: 1px solid #30363d;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.prn-nav-btn:hover:not(:disabled) {
+  background: #30363d;
+}
+.prn-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.prn-nav-btn--next {
+  background: #238636;
+  color: #ffffff;
+  border-color: #238636;
+}
+.prn-nav-btn--next:hover:not(:disabled) {
+  background: #2ea043;
+}
+
+/* Completion screen */
+.prn-completion {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+}
+.prn-completion-title {
+  font-size: 16px;
+  color: #e6edf3;
+  font-weight: 600;
+}
+.prn-completion-summary {
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 8px;
+}
+.prn-completion-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+/* Orphan warning */
+.prn-orphans {
+  background: rgba(248, 81, 73, 0.07);
+  border: 1px solid rgba(248, 81, 73, 0.2);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  text-align: left;
+}
+.prn-orphans-title {
+  font-size: 13px;
+  color: #f85149;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.prn-orphan-file {
+  padding: 4px 8px;
+  background: #0d1117;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: #c9d1d9;
+  margin-bottom: 4px;
+}
+
+/* Page layout adjustment when sidebar is open */
+.prn-layout-shifted {
+  margin-left: 272px !important;
+}
