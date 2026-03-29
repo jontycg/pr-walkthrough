@@ -48,22 +48,10 @@ Once you have the PR number, store it as `PR_NUMBER` for all subsequent commands
 
 ## Role Detection
 
-Determine whether the current user is the PR author or a reviewer. This affects the grouping workflow later.
+Determine whether the current user is the PR author or a reviewer based on how the PR was identified — no extra API calls needed:
 
-Run these as **two separate commands** (do not chain them):
-
-```bash
-gh api user --jq '.login'
-```
-
-```bash
-gh pr view $PR_NUMBER --json author --jq '.author.login'
-```
-
-Compare the two logins:
-
-- If they match: the user is the **author**. They get interactive grouping options (choice of strategy).
-- If they don't match: the user is a **reviewer**. Auto-pick the best grouping strategy without prompting.
+- **PR was auto-detected from the current branch:** Treat the user as the **author**. They get interactive grouping options (choice of strategy).
+- **User provided a PR URL or number:** Treat the user as a **reviewer**. Auto-pick the best grouping strategy without prompting.
 
 ---
 
