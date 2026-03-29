@@ -47,6 +47,16 @@ PR Walkthrough includes a Claude Code skill that can automatically generate walk
 
 ### Install
 
+**From a clone (recommended for development):**
+
+```bash
+ln -s "$(pwd)/skill/pr-walkthrough" ~/.claude/skills/pr-walkthrough
+```
+
+This symlinks the skill directory so any local changes are picked up immediately.
+
+**Or with curl (no clone needed):**
+
 ```bash
 mkdir -p ~/.claude/skills/pr-walkthrough && curl -fsSL https://raw.githubusercontent.com/jontycg/pr-walkthrough/main/skill/pr-walkthrough/SKILL.md -o ~/.claude/skills/pr-walkthrough/SKILL.md
 ```
