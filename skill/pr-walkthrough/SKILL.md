@@ -30,10 +30,13 @@ If this fails, stop and tell the user to run `gh auth login` first.
 2. **Identify the PR.** Use one of these methods, in priority order:
 
    - **Argument provided:** If the user gave a PR URL or number, use that directly. Extract the number from URLs like `https://github.com/owner/repo/pull/123`.
-   - **Current branch:** If no argument was given, detect the current branch and look for an open PR:
+   - **Current branch:** If no argument was given, detect the current branch and look for an open PR. Run these as separate commands:
 
 ```bash
-BRANCH=$(git branch --show-current)
+git branch --show-current
+```
+
+```bash
 gh pr list --head "$BRANCH" --json number,title --limit 1
 ```
 
@@ -47,13 +50,20 @@ Once you have the PR number, store it as `PR_NUMBER` for all subsequent commands
 
 Determine whether the current user is the PR author or a reviewer. This affects the grouping workflow later.
 
+Run these as **two separate commands** (do not chain them):
+
 ```bash
-CURRENT_USER=$(gh api user --jq '.login')
-PR_AUTHOR=$(gh pr view $PR_NUMBER --json author --jq '.author.login')
+gh api user --jq '.login'
 ```
 
-- If `CURRENT_USER == PR_AUTHOR`: the user is the **author**. They get interactive grouping options (choice of strategy).
-- If `CURRENT_USER != PR_AUTHOR`: the user is a **reviewer**. Auto-pick the best grouping strategy without prompting.
+```bash
+gh pr view $PR_NUMBER --json author --jq '.author.login'
+```
+
+Compare the two logins:
+
+- If they match: the user is the **author**. They get interactive grouping options (choice of strategy).
+- If they don't match: the user is a **reviewer**. Auto-pick the best grouping strategy without prompting.
 
 ---
 
@@ -67,10 +77,13 @@ The purpose of this stage is to understand the **intent** behind the PR. Commits
 gh pr view $PR_NUMBER --json commits --jq '.commits[] | "\(.oid) \(.messageHeadline)"'
 ```
 
-2. **Read each commit's diff** to understand what it changed and why:
+2. **Read each commit's diff** to understand what it changed and why. Run each as a separate command:
 
 ```bash
 git show <SHA> --stat
+```
+
+```bash
 git show <SHA>
 ```
 
@@ -123,25 +136,27 @@ Group the changed files into steps that make sense for a reviewer reading the PR
 
 Apply these principles when creating step groupings:
 
-1. **Most important flow first.** Start with the primary change, traced from entry point through the call stack. The reviewer should understand the main point of the PR before seeing supporting changes.
+1. **Trace each code flow from entry point through the call stack.** The fundamental unit of a walkthrough step is a code flow — starting at a route/handler/endpoint and following execution through services, utilities, and data layers. Each step should walk the reviewer through one flow, not one subsystem or feature category.
 
-2. **Follow code execution/dependency order within a flow.** Within a single flow, order files so the reviewer sees the caller before the callee, or the type definition before its usage -- whichever makes the code easier to follow.
+2. **Do NOT group by subsystem or category.** Grouping like "all routes" or "all services" or "all tests" forces the reviewer to jump around. Instead, group `route → service → helper → test` together as one step if they form a single flow.
 
-3. **Test files alongside their code** -- unless tests massively outnumber source files, in which case put tests in a separate step. The threshold is roughly 2:1 test-to-source ratio within a step.
+3. **Follow code execution order within a step.** Within a step, order files so the reviewer sees the caller before the callee, or the type definition before its usage — whichever makes the code easier to follow.
 
-4. **Secondary flows after primary.** Refactors, renames, config changes, and other supporting work come after the main story.
+4. **Test files alongside their code** — unless tests massively outnumber source files, in which case put tests in a separate step. The threshold is roughly 2:1 test-to-source ratio within a step.
 
-5. **Each step must be comprehensible on its own.** A reviewer should be able to understand what a step is about without reading other steps. Do not split tightly coupled files across steps.
+5. **Most important flow first, supporting changes last.** Start with the primary change. Refactors, renames, config changes, and other supporting work come after the main story.
 
-6. **Step descriptions explain "why", not just "what".** "Adds validation middleware to reject malformed requests before they hit the service layer" is better than "Validation changes".
+6. **Each step must be comprehensible on its own.** A reviewer should be able to understand what a step is about without reading other steps. Do not split tightly coupled files across steps.
+
+7. **Step descriptions explain "why", not just "what".** "Adds validation middleware to reject malformed requests before they hit the service layer" is better than "Validation changes".
 
 ### Grouping Strategies
 
-There are several valid ways to group files. The best choice depends on the PR:
+There are several valid ways to order the flows. The best choice depends on the PR:
 
-- **Entry-point inward:** Start at the API/UI entry point and trace inward through service layers, ending with utilities and types. Best for feature PRs.
-- **Data-flow:** Follow the data path from input to output. Best for pipeline or transformation PRs.
-- **Layer-by-layer:** Group by architectural layer (types, then services, then routes, then tests). Best for cross-cutting refactors.
+- **Entry-point inward (default):** Each step traces one flow from its API/UI entry point through services and helpers. Best for most PRs.
+- **Data-flow:** Follow the data path from input to output across the system. Best for pipeline or transformation PRs.
+- **Layer-by-layer:** Group by architectural layer (types → services → routes → tests). Use ONLY for cross-cutting refactors that touch many files in the same layer without distinct flows.
 
 ### Author Flow (current user is the PR author)
 
@@ -209,14 +224,16 @@ After generating the comment:
 
 Before publishing, check whether a PR Walkthrough comment already exists on the PR.
 
-```bash
-gh api "repos/{owner}/{repo}/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | startswith("## PR Walkthrough")) | {id: .id, author: .user.login}'
-```
-
-Extract `{owner}` and `{repo}` from the PR or from the git remote:
+First, get the repo owner and name:
 
 ```bash
 gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"'
+```
+
+Then check for existing walkthrough comments (substitute the owner/repo values):
+
+```bash
+gh api "repos/{owner}/{repo}/issues/$PR_NUMBER/comments" --jq '.[] | select(.body | startswith("## PR Walkthrough")) | {id: .id, author: .user.login}'
 ```
 
 Three possible outcomes:
@@ -229,39 +246,44 @@ Three possible outcomes:
 
 ## Publishing
 
-Write the comment to a temp file to avoid shell escaping issues, then publish via the GitHub CLI.
+Use the Write tool to save the comment body to a file, then publish via `--body-file` to avoid shell escaping issues. Do NOT use chained commands or variable assignment — keep each bash invocation simple.
 
 ### New Comment
 
-```bash
-# Write comment to temp file
-# (use the Write tool to create /tmp/pr-walkthrough-comment.md with the comment content)
+First, use the **Write tool** to create the file `pr-walkthrough-comment.md` in the current working directory with the full comment content.
 
-gh pr comment $PR_NUMBER --body-file /tmp/pr-walkthrough-comment.md
+Then publish:
+
+```bash
+gh pr comment $PR_NUMBER --body-file pr-walkthrough-comment.md
 ```
 
 ### Edit Existing Comment
 
-```bash
-# Write updated comment to temp file
-# (use the Write tool to create /tmp/pr-walkthrough-comment.md with the comment content)
+First, use the **Write tool** to create `pr-walkthrough-comment.md` with the updated comment content.
 
-REPO_INFO=$(gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"')
-gh api --method PATCH "repos/$REPO_INFO/issues/comments/$COMMENT_ID" -f body="$(cat /tmp/pr-walkthrough-comment.md)"
+Then get the repo info and patch the comment as **separate commands**:
+
+```bash
+gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"'
+```
+
+```bash
+gh api --method PATCH "repos/{owner}/{repo}/issues/comments/$COMMENT_ID" --input pr-walkthrough-comment.md
 ```
 
 ### After Publishing
 
-1. Clean up the temp file:
-
-```bash
-rm -f /tmp/pr-walkthrough-comment.md
-```
-
-2. Confirm to the user that the comment was published. Include a direct link to the PR:
+Confirm to the user that the comment was published. Include a direct link to the PR:
 
 ```bash
 gh pr view $PR_NUMBER --json url --jq '.url'
+```
+
+Clean up the temp file:
+
+```bash
+rm pr-walkthrough-comment.md
 ```
 
 Tell the user the walkthrough is live and reviewers with the PR Walkthrough extension will see the guided view on the Files Changed tab.
