@@ -41,6 +41,32 @@ Migration and model updates — straightforward schema addition.
 - `tests/userService.test.ts`
 ```
 
+## Claude Code Skill
+
+PR Walkthrough includes a Claude Code skill that can automatically generate walkthrough comments by analyzing your PR's commits and code structure. It works for both PR authors (presents grouping options) and reviewers (best-effort automatic grouping).
+
+### Install
+
+```bash
+mkdir -p ~/.claude/skills/pr-walkthrough && curl -fsSL https://raw.githubusercontent.com/jontycg/pr-walkthrough/main/skill/pr-walkthrough/SKILL.md -o ~/.claude/skills/pr-walkthrough/SKILL.md
+```
+
+### Usage
+
+From within a repo with an open PR on the current branch:
+
+```
+/pr-walkthrough
+```
+
+Or point it at any PR:
+
+```
+/pr-walkthrough https://github.com/org/repo/pull/123
+```
+
+Requires the [GitHub CLI](https://cli.github.com/) (`gh`) installed and authenticated.
+
 ## Browser Support
 
 - Chrome (and Chromium-based browsers like Edge)
