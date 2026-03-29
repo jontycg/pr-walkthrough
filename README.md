@@ -50,7 +50,7 @@ PR Walkthrough includes a Claude Code skill that can automatically generate walk
 **From a clone (recommended for development):**
 
 ```bash
-ln -s "$(pwd)/skill/pr-walkthrough" ~/.claude/skills/pr-walkthrough
+mkdir -p ~/.claude/skills && ln -s "$(pwd)/skill/pr-walkthrough" ~/.claude/skills/pr-walkthrough
 ```
 
 This symlinks the skill directory so any local changes are picked up immediately.
