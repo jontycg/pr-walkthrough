@@ -113,7 +113,10 @@ Organize the changed files into a two-level hierarchy: **groups** containing **s
 - A **group** represents a cohesive set of related changes (e.g., "User onboarding flow", "Email resend feature", "Shared utilities").
 - A **step** within a group traces one code flow from entry point through the call stack (e.g., "Route handler → service → database", "Tests").
 
-For small PRs with a single feature, use one group with multiple steps. For PRs that touch multiple features or areas, use multiple groups.
+**When to use each format:**
+
+- **Single idea** (one feature, one bugfix, or ~8 files or fewer): Use **flat format** — `###` headings for steps, no groups. Simpler and cleaner.
+- **Multiple ideas** (PR touches several distinct change areas): Use **grouped format** — `###` for groups, `####` for steps within groups.
 
 ### Grouping Principles
 
@@ -145,38 +148,60 @@ Pick the best grouping without prompting. Default to tracing code flows from ent
 
 Generate the walkthrough comment in the format required by the PR Walkthrough browser extension.
 
-### Output Format
+### Output Format — Flat (single idea)
 
 ```
 ## PR Walkthrough
 
-### [Group Title]
-[1-3 sentence description of this group of changes and what to focus on]
+### [Step Title]
+[1-3 sentence description of what to focus on]
+
+- `[exact/path/to/file]`
+- `[exact/path/to/another-file]`
+
+### [Step Title]
+[1-3 sentence description]
+
+- `[exact/path/to/file]`
+```
+
+### Output Format — Grouped (multiple ideas)
+
+```
+## PR Walkthrough
+
+### [Idea Title]
+[1-3 sentence description of this group of changes]
 
 #### [Step Title]
+[1-3 sentence description of what to focus on]
+
 - `[exact/path/to/file]`
 - `[exact/path/to/another-file]`
 
 #### [Step Title]
+[1-3 sentence description]
+
 - `[exact/path/to/file]`
 
-### [Next Group Title]
+### [Next Idea Title]
 [1-3 sentence description]
 
 #### [Step Title]
+[1-3 sentence description]
+
 - `[exact/path/to/file]`
 ```
 
 ### Format Rules
 
 - The comment MUST start with `## PR Walkthrough` on its own line (magic prefix for the extension).
-- Groups use `### ` headings (h3). Steps within groups use `#### ` headings (h4).
-- Group descriptions are plain text between the `###` heading and the first `####` step. Keep to 1-3 sentences.
-- Steps do NOT have descriptions — just a title and file list.
+- **Flat format:** Steps use `### ` headings (h3) with descriptions and file lists.
+- **Grouped format:** Ideas use `### ` headings (h3), steps within use `#### ` headings (h4). Both ideas and steps have descriptions.
 - Files are listed as `- \`path/to/file\`` with exact paths from `gh pr diff --name-only`.
-- Blank line between groups. Blank line between the group description and first step.
+- Blank line between steps/groups. Blank line between descriptions and file lists.
 - **Every changed file must appear in exactly one step.** Cross-reference against the full file list.
-- For single-group PRs, you can omit the `####` step level and list files directly under the `###` heading (flat format, backwards compatible).
+- Use flat format for single-idea PRs. Use grouped format when the PR has multiple distinct change areas. Do NOT use grouped format with a single group — use flat instead.
 
 ### Review Loop
 
