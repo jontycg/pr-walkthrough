@@ -32,8 +32,10 @@ The entry point.
       title: 'API route',
       description: 'The entry point.',
       files: ['src/routes/users.ts', 'src/controllers/userController.ts'],
+      group: null,
     });
     expect(result.allFiles).toEqual(['src/routes/users.ts', 'src/controllers/userController.ts']);
+    expect(result.groups).toEqual([]);
   });
 
   it('parses multiple steps in document order', () => {
@@ -54,12 +56,16 @@ The business logic.
     expect(result.steps).toHaveLength(3);
     expect(result.steps[0].number).toBe(1);
     expect(result.steps[0].title).toBe('Controllers');
+    expect(result.steps[0].group).toBeNull();
     expect(result.steps[1].number).toBe(2);
     expect(result.steps[1].title).toBe('Services');
     expect(result.steps[1].description).toBe('The business logic.');
+    expect(result.steps[1].group).toBeNull();
     expect(result.steps[2].number).toBe(3);
     expect(result.steps[2].title).toBe('Tests');
     expect(result.steps[2].files).toEqual(['tests/a.test.ts', 'tests/b.test.ts']);
+    expect(result.steps[2].group).toBeNull();
+    expect(result.groups).toEqual([]);
   });
 
   it('handles steps with no description', () => {
@@ -71,6 +77,8 @@ The business logic.
     const result = parseWalkthroughComment(comment);
     expect(result.steps[0].description).toBe('');
     expect(result.steps[0].files).toEqual(['src/old.ts']);
+    expect(result.steps[0].group).toBeNull();
+    expect(result.groups).toEqual([]);
   });
 
   it('handles multi-line descriptions', () => {
@@ -86,6 +94,8 @@ Pay attention to the error handling.
     expect(result.steps[0].description).toBe(
       'This is a longer explanation.\nIt spans multiple lines.\nPay attention to the error handling.'
     );
+    expect(result.steps[0].group).toBeNull();
+    expect(result.groups).toEqual([]);
   });
 
   it('returns empty steps for walkthrough with no ### headings', () => {
@@ -96,6 +106,7 @@ Just some text without steps.`;
     const result = parseWalkthroughComment(comment);
     expect(result.steps).toHaveLength(0);
     expect(result.allFiles).toEqual([]);
+    expect(result.groups).toEqual([]);
   });
 
   it('handles steps with no files', () => {
@@ -110,7 +121,10 @@ This step is just context, no files.
     const result = parseWalkthroughComment(comment);
     expect(result.steps).toHaveLength(2);
     expect(result.steps[0].files).toEqual([]);
+    expect(result.steps[0].group).toBeNull();
     expect(result.steps[1].files).toEqual(['src/foo.ts']);
+    expect(result.steps[1].group).toBeNull();
+    expect(result.groups).toEqual([]);
   });
 
   it('collects allFiles as unique set across steps', () => {
@@ -126,5 +140,100 @@ This step is just context, no files.
 
     const result = parseWalkthroughComment(comment);
     expect(result.allFiles).toEqual(['src/shared.ts', 'src/a.ts', 'src/b.ts']);
+    expect(result.groups).toEqual([]);
+  });
+});
+
+describe('grouped mode (#### steps under ### ideas)', () => {
+  it('parses a single group with steps', () => {
+    const comment = `## PR Walkthrough
+
+### User onboarding
+Adds the onboarding flow from route through service.
+
+#### Route handler
+Handle the signup request.
+- \`src/routes/onboard.ts\`
+
+#### Service layer
+- \`src/services/onboard.ts\``;
+
+    const result = parseWalkthroughComment(comment);
+
+    expect(result.groups).toHaveLength(1);
+    expect(result.groups[0]).toEqual({
+      title: 'User onboarding',
+      description: 'Adds the onboarding flow from route through service.',
+    });
+
+    expect(result.steps).toHaveLength(2);
+    expect(result.steps[0]).toEqual({
+      number: 1,
+      title: 'Route handler',
+      description: 'Handle the signup request.',
+      files: ['src/routes/onboard.ts'],
+      group: result.groups[0],
+    });
+    expect(result.steps[1]).toEqual({
+      number: 2,
+      title: 'Service layer',
+      description: '',
+      files: ['src/services/onboard.ts'],
+      group: result.groups[0],
+    });
+  });
+
+  it('parses multiple groups with steps', () => {
+    const comment = `## PR Walkthrough
+
+### Signup notification email
+Sends a notification when a customer signs up.
+
+#### Email service
+- \`src/services/email.ts\`
+
+#### Trigger from onboarding
+- \`src/services/onboarding.ts\`
+
+### Reconnect toast
+Replaces the default reconnect modal.
+
+#### Toast component
+- \`src/components/toast.ts\``;
+
+    const result = parseWalkthroughComment(comment);
+
+    expect(result.groups).toHaveLength(2);
+    expect(result.groups[0].title).toBe('Signup notification email');
+    expect(result.groups[1].title).toBe('Reconnect toast');
+
+    expect(result.steps).toHaveLength(3);
+    expect(result.steps[0].group).toBe(result.groups[0]);
+    expect(result.steps[1].group).toBe(result.groups[0]);
+    expect(result.steps[2].group).toBe(result.groups[1]);
+
+    // Step numbers are global across groups
+    expect(result.steps[0].number).toBe(1);
+    expect(result.steps[1].number).toBe(2);
+    expect(result.steps[2].number).toBe(3);
+
+    expect(result.allFiles).toEqual([
+      'src/services/email.ts',
+      'src/services/onboarding.ts',
+      'src/components/toast.ts',
+    ]);
+  });
+
+  it('handles group with no description', () => {
+    const comment = `## PR Walkthrough
+
+### Config changes
+
+#### Build config
+- \`webpack.config.js\``;
+
+    const result = parseWalkthroughComment(comment);
+    expect(result.groups[0].description).toBe('');
+    expect(result.steps[0].group).toBe(result.groups[0]);
   });
 });
