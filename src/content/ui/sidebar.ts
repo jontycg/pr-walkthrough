@@ -1,4 +1,4 @@
-import { Step } from '../../types';
+import { Group, Step } from '../../types';
 
 export interface SidebarCallbacks {
   onStepClick: (stepNumber: number) => void;
@@ -7,8 +7,40 @@ export interface SidebarCallbacks {
   onExit: () => void;
 }
 
+function createStepElement(
+  step: Step,
+  activeStep: number,
+  totalSteps: number,
+  callbacks: SidebarCallbacks,
+): HTMLElement {
+  const stepEl = document.createElement('div');
+  stepEl.className = 'prn-sidebar-step';
+  if (step.group) stepEl.classList.add('prn-sidebar-step--grouped');
+  if (step.number === activeStep) stepEl.classList.add('prn-sidebar-step--active');
+  stepEl.setAttribute('data-prn-step', String(step.number));
+
+  const number = document.createElement('div');
+  number.className = 'prn-sidebar-step-number';
+  number.textContent = `Step ${step.number} of ${totalSteps}`;
+  stepEl.appendChild(number);
+
+  const stepTitle = document.createElement('div');
+  stepTitle.className = 'prn-sidebar-step-title';
+  stepTitle.textContent = step.title;
+  stepEl.appendChild(stepTitle);
+
+  const fileCount = document.createElement('div');
+  fileCount.className = 'prn-sidebar-step-files';
+  fileCount.textContent = `${step.files.length} file${step.files.length !== 1 ? 's' : ''}`;
+  stepEl.appendChild(fileCount);
+
+  stepEl.addEventListener('click', () => callbacks.onStepClick(step.number));
+  return stepEl;
+}
+
 export function createSidebar(
   steps: Step[],
+  groups: Group[],
   activeStep: number,
   callbacks: SidebarCallbacks
 ): HTMLElement {
@@ -20,31 +52,29 @@ export function createSidebar(
   title.textContent = 'PR Walkthrough';
   sidebar.appendChild(title);
 
-  for (const step of steps) {
-    const stepEl = document.createElement('div');
-    stepEl.className = 'prn-sidebar-step';
-    if (step.number === activeStep) {
-      stepEl.classList.add('prn-sidebar-step--active');
+  if (groups.length > 0) {
+    // Grouped mode: render group headers with indented steps
+    for (const group of groups) {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'prn-sidebar-group';
+
+      const groupTitle = document.createElement('div');
+      groupTitle.className = 'prn-sidebar-group-title';
+      groupTitle.textContent = group.title;
+      groupEl.appendChild(groupTitle);
+
+      sidebar.appendChild(groupEl);
+
+      // Render steps belonging to this group
+      for (const step of steps.filter(s => s.group === group)) {
+        sidebar.appendChild(createStepElement(step, activeStep, steps.length, callbacks));
+      }
     }
-    stepEl.setAttribute('data-prn-step', String(step.number));
-
-    const number = document.createElement('div');
-    number.className = 'prn-sidebar-step-number';
-    number.textContent = `Step ${step.number} of ${steps.length}`;
-    stepEl.appendChild(number);
-
-    const stepTitle = document.createElement('div');
-    stepTitle.className = 'prn-sidebar-step-title';
-    stepTitle.textContent = step.title;
-    stepEl.appendChild(stepTitle);
-
-    const fileCount = document.createElement('div');
-    fileCount.className = 'prn-sidebar-step-files';
-    fileCount.textContent = `${step.files.length} file${step.files.length !== 1 ? 's' : ''}`;
-    stepEl.appendChild(fileCount);
-
-    stepEl.addEventListener('click', () => callbacks.onStepClick(step.number));
-    sidebar.appendChild(stepEl);
+  } else {
+    // Flat mode: render steps directly
+    for (const step of steps) {
+      sidebar.appendChild(createStepElement(step, activeStep, steps.length, callbacks));
+    }
   }
 
   const navSection = document.createElement('div');

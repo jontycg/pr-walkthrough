@@ -35,7 +35,7 @@ function enterWalkthroughMode(): void {
   removeEntryButton();
 
   // Create and inject sidebar
-  state.sidebarEl = createSidebar(state.walkthrough.steps, state.currentStep, {
+  state.sidebarEl = createSidebar(state.walkthrough.steps, state.walkthrough.groups, state.currentStep, {
     onStepClick: goToStep,
     onPrev: () => goToStep(state.currentStep - 1),
     onNext: () => {
