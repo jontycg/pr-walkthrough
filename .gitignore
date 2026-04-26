@@ -2,3 +2,5 @@ node_modules/
 build/
 .superpowers/
 *.js.map
+.DS_Store
+docs/

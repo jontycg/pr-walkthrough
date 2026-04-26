@@ -171,7 +171,6 @@ Generate the walkthrough comment in the format required by the PR Walkthrough br
 ## PR Walkthrough
 
 ### [Idea Title]
-[1-3 sentence description of this group of changes]
 
 #### [Step Title]
 [1-3 sentence description of what to focus on]
@@ -185,7 +184,6 @@ Generate the walkthrough comment in the format required by the PR Walkthrough br
 - `[exact/path/to/file]`
 
 ### [Next Idea Title]
-[1-3 sentence description]
 
 #### [Step Title]
 [1-3 sentence description]
@@ -197,7 +195,7 @@ Generate the walkthrough comment in the format required by the PR Walkthrough br
 
 - The comment MUST start with `## PR Walkthrough` on its own line (magic prefix for the extension).
 - **Flat format:** Steps use `### ` headings (h3) with descriptions and file lists.
-- **Grouped format:** Ideas use `### ` headings (h3), steps within use `#### ` headings (h4). Both ideas and steps have descriptions.
+- **Grouped format:** Ideas use `### ` headings (h3) with no description (the title is self-explanatory). Steps within use `#### ` headings (h4) with descriptions.
 - Files are listed as `- \`path/to/file\`` with exact paths from `gh pr diff --name-only`.
 - Blank line between steps/groups. Blank line between descriptions and file lists.
 - **Every changed file must appear in exactly one step.** Cross-reference against the full file list.

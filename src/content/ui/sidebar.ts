@@ -63,6 +63,13 @@ export function createSidebar(
       groupTitle.textContent = group.title;
       groupEl.appendChild(groupTitle);
 
+      if (group.description) {
+        const groupDesc = document.createElement('div');
+        groupDesc.className = 'prn-sidebar-group-desc';
+        groupDesc.textContent = group.description;
+        groupEl.appendChild(groupDesc);
+      }
+
       sidebar.appendChild(groupEl);
 
       // Render steps belonging to this group
@@ -118,7 +125,10 @@ export function updateSidebarActiveStep(sidebar: HTMLElement, stepNumber: number
   const prevBtn = sidebar.querySelector('.prn-sidebar-prev') as HTMLButtonElement | null;
   const nextBtn = sidebar.querySelector('.prn-sidebar-next') as HTMLButtonElement | null;
   if (prevBtn) prevBtn.disabled = stepNumber === 1;
-  if (nextBtn) nextBtn.innerHTML = stepNumber === totalSteps ? 'Finish &rarr;' : 'Next &rarr;';
+  if (nextBtn) {
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = stepNumber === totalSteps ? 'Finish &rarr;' : 'Next &rarr;';
+  }
 }
 
 export function injectSidebar(sidebar: HTMLElement): boolean {

@@ -1,6 +1,6 @@
 import { WalkthroughData, Step } from '../types';
-import { extractPRContext, fetchWalkthrough } from './api';
-import { filterFiles, showAllFiles, getAllPRFilePaths } from './filter';
+import { extractPRContext, fetchWalkthrough, isFilesPage } from './api';
+import { filterFiles, showAllFiles, filterFileTree, showAllFileTree, getAllPRFilePaths } from './filter';
 import { createEntryButton, injectEntryButton, removeEntryButton } from './ui/entryButton';
 import { createSidebar, updateSidebarActiveStep, injectSidebar, removeSidebar } from './ui/sidebar';
 import { createStepper, injectStepper, removeStepper } from './ui/stepper';
@@ -16,7 +16,6 @@ interface State {
   currentStep: number;
   active: boolean;
   sidebarEl: HTMLElement | null;
-  fileTreeListener: ((e: Event) => void) | null;
 }
 
 const state: State = {
@@ -24,7 +23,6 @@ const state: State = {
   currentStep: 1,
   active: false,
   sidebarEl: null,
-  fileTreeListener: null,
 };
 
 function enterWalkthroughMode(): void {
@@ -49,13 +47,6 @@ function enterWalkthroughMode(): void {
   });
   injectSidebar(state.sidebarEl);
 
-  // Exit walkthrough if user clicks a file in GitHub's file tree
-  const fileTree = document.querySelector('#pr-file-tree');
-  if (fileTree) {
-    state.fileTreeListener = () => exitWalkthroughMode();
-    fileTree.addEventListener('click', state.fileTreeListener);
-  }
-
   // Show first step
   showStep(state.walkthrough.steps[0]);
 }
@@ -66,14 +57,8 @@ function exitWalkthroughMode(): void {
   removeStepper();
   removeCompletionScreen();
   showAllFiles();
+  showAllFileTree();
   state.sidebarEl = null;
-
-  // Remove file tree click listener
-  if (state.fileTreeListener) {
-    const fileTree = document.querySelector('#pr-file-tree');
-    if (fileTree) fileTree.removeEventListener('click', state.fileTreeListener);
-    state.fileTreeListener = null;
-  }
 
   // Re-inject entry button
   if (state.walkthrough) {
@@ -115,16 +100,21 @@ function showStep(step: Step): void {
   });
   injectStepper(stepper);
   filterFiles(step.files);
+  filterFileTree(step.files);
   window.scrollTo({ top: 0 });
 }
 
 function showCompletion(): void {
   if (!state.walkthrough) return;
 
+  // Guard against duplicate completion screens
+  if (document.querySelector('.prn-completion')) return;
+
   removeStepper();
   showAllFiles();
   // Then hide all files so completion screen is the focus
   filterFiles([]);
+  filterFileTree([]);
 
   const prFiles = getAllPRFilePaths();
   const orphans = computeOrphans(prFiles, state.walkthrough.allFiles);
@@ -145,6 +135,9 @@ function showCompletion(): void {
     state.sidebarEl.querySelectorAll('.prn-sidebar-step').forEach(el => {
       el.classList.remove('prn-sidebar-step--active');
     });
+    // Disable Next/Finish button so completion can't be triggered again
+    const nextBtn = state.sidebarEl.querySelector('.prn-sidebar-next') as HTMLButtonElement | null;
+    if (nextBtn) nextBtn.disabled = true;
   }
 }
 
@@ -156,6 +149,13 @@ async function init(): Promise<void> {
     return;
   }
   console.log('[PR Walkthrough] PR context:', ctx);
+
+  if (!isFilesPage()) {
+    console.log('[PR Walkthrough] not on files/changes tab, waiting for navigation');
+    // Don't fetch walkthrough or inject button, but navigation listeners
+    // are already set up and will call init() again when we land on files/changes.
+    return;
+  }
 
   const walkthrough = await fetchWalkthrough(ctx);
   if (!walkthrough) {
@@ -170,29 +170,115 @@ async function init(): Promise<void> {
 
   state.walkthrough = walkthrough;
 
-  const btn = createEntryButton(walkthrough.steps.length, enterWalkthroughMode);
+  // Try injecting the button, with retries for SPA navigation where
+  // GitHub's toolbar DOM may not have rendered yet.
+  await injectWhenReady(walkthrough.steps.length);
+}
+
+/**
+ * Try to inject the entry button, retrying if the toolbar DOM isn't ready yet.
+ * This handles GitHub SPA navigation where pushState fires before React
+ * has rendered the toolbar.
+ */
+async function injectWhenReady(stepCount: number): Promise<void> {
+  const btn = createEntryButton(stepCount, enterWalkthroughMode);
   const injected = injectEntryButton(btn);
-  console.log('[PR Walkthrough] button injected:', injected);
-  if (!injected) {
-    console.log('[PR Walkthrough] could not find injection point, appending to body as fallback');
-    btn.style.position = 'fixed';
-    btn.style.top = '10px';
-    btn.style.right = '10px';
-    btn.style.zIndex = '9999';
-    document.body.appendChild(btn);
+  if (injected) {
+    console.log('[PR Walkthrough] button injected on first try');
+    return;
   }
+
+  // Toolbar not in DOM yet — poll with backoff, then fall back to MutationObserver
+  console.log('[PR Walkthrough] toolbar not ready, waiting for DOM…');
+
+  const MAX_POLLS = 10;
+  const POLL_INTERVAL = 300;
+  for (let i = 0; i < MAX_POLLS; i++) {
+    await sleep(POLL_INTERVAL);
+    // Guard: if we navigated away, stop retrying
+    if (!state.walkthrough) return;
+    const btn2 = createEntryButton(stepCount, enterWalkthroughMode);
+    if (injectEntryButton(btn2)) {
+      console.log('[PR Walkthrough] button injected on poll', i + 1);
+      return;
+    }
+  }
+
+  // Still not found — set up a MutationObserver to catch it when it appears
+  console.log('[PR Walkthrough] polling exhausted, setting up MutationObserver');
+  watchForToolbar(stepCount);
+}
+
+let toolbarObserver: MutationObserver | null = null;
+
+function watchForToolbar(stepCount: number): void {
+  stopToolbarObserver();
+
+  toolbarObserver = new MutationObserver(() => {
+    if (!state.walkthrough) {
+      stopToolbarObserver();
+      return;
+    }
+    const btn = createEntryButton(stepCount, enterWalkthroughMode);
+    if (injectEntryButton(btn)) {
+      console.log('[PR Walkthrough] button injected via MutationObserver');
+      stopToolbarObserver();
+    }
+  });
+
+  toolbarObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+function stopToolbarObserver(): void {
+  if (toolbarObserver) {
+    toolbarObserver.disconnect();
+    toolbarObserver = null;
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Initialize on page load
 init();
 
-// Handle GitHub SPA navigation (Turbo)
-document.addEventListener('turbo:load', () => {
-  // Clean up any active walkthrough mode
+// Handle GitHub SPA navigation
+// GitHub's React UI uses History API (pushState/replaceState) rather than Turbo.
+// Listen for both turbo:load (legacy) and URL changes via popstate + patched pushState.
+function onNavigation(): void {
   if (state.active) {
     exitWalkthroughMode();
   }
   state.walkthrough = null;
+  stopToolbarObserver();
   removeEntryButton();
   init();
+}
+
+document.addEventListener('turbo:load', onNavigation);
+window.addEventListener('popstate', onNavigation);
+
+// GitHub patches history.pushState itself and dispatches a custom "pushState" event.
+// Our own patch gets overwritten by GitHub, so we listen for their event instead.
+// Filter to only real navigations — GitHub fires pushState for scroll tracking too.
+let lastUrl = location.href;
+window.addEventListener('pushState', () => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    onNavigation();
+  }
 });
+
+// Also patch replaceState as a fallback (may be overwritten by GitHub too)
+const origReplaceState = history.replaceState.bind(history);
+history.replaceState = function (...args) {
+  origReplaceState(...args);
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    onNavigation();
+  }
+};

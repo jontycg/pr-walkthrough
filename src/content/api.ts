@@ -2,9 +2,11 @@ import { PRContext, WalkthroughData } from '../types';
 import { isWalkthroughComment, parseWalkthroughComment } from './parser';
 
 export function extractPRContext(): PRContext | null {
-  // URL pattern: github.com/:owner/:repo/pull/:number/files or /changes
+  // URL pattern: github.com/:owner/:repo/pull/:number[/files|/changes]
+  // Match any PR page so the script loads and sets up navigation listeners,
+  // even on the Conversation tab. Button injection is gated separately.
   const match = window.location.pathname.match(
-    /^\/([^/]+)\/([^/]+)\/pull\/(\d+)\/(?:files|changes)/
+    /^\/([^/]+)\/([^/]+)\/pull\/(\d+)/
   );
   if (!match) return null;
   return {
@@ -12,6 +14,14 @@ export function extractPRContext(): PRContext | null {
     repo: match[2],
     pullNumber: parseInt(match[3], 10),
   };
+}
+
+/**
+ * Check if the current page is a PR files/changes tab where the walkthrough
+ * button should be injected.
+ */
+export function isFilesPage(): boolean {
+  return /\/pull\/\d+\/(?:files|changes)/.test(window.location.pathname);
 }
 
 interface GitHubComment {
@@ -75,6 +85,8 @@ function htmlCommentToMarkdown(el: HTMLElement): string {
       lines.push(`## ${text}`);
     } else if (tag === 'h3') {
       lines.push(`### ${text}`);
+    } else if (tag === 'h4') {
+      lines.push(`#### ${text}`);
     } else if (tag === 'p') {
       lines.push(text);
     } else if (tag === 'ul') {

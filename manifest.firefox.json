@@ -5,7 +5,7 @@
   "description": "Guided tours through GitHub pull requests",
   "content_scripts": [
     {
-      "matches": ["https://github.com/*/pull/*/files*", "https://github.com/*/pull/*/changes*"],
+      "matches": ["https://github.com/*/pull/*"],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
