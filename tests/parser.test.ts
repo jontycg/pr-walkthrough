@@ -236,4 +236,75 @@ Replaces the default reconnect modal.
     expect(result.groups[0].description).toBe('');
     expect(result.steps[0].group).toBe(result.groups[0]);
   });
+
+  it('promotes group with no #### steps into a step', () => {
+    const comment = `## PR Walkthrough
+
+### Schema foundations
+
+#### Database migration
+Adds nullable columns.
+- \`src/migrations/001.ts\`
+
+### Metrics propagation
+When refreshFarmSeasonMetrics rehydrates a Season entity, it now carries name and activeMatingEndDate through.
+- \`src/metrics/farm-season-metrics.service.ts\`
+- \`src/metrics/farm-season-metrics.service.spec.ts\``;
+
+    const result = parseWalkthroughComment(comment);
+
+    expect(result.groups).toHaveLength(2);
+    expect(result.groups[1].title).toBe('Metrics propagation');
+    expect(result.groups[1].description).toBe('When refreshFarmSeasonMetrics rehydrates a Season entity, it now carries name and activeMatingEndDate through.');
+
+    // The second group should be promoted to a step so it's clickable in the sidebar
+    expect(result.steps).toHaveLength(2);
+    expect(result.steps[0].title).toBe('Database migration');
+    expect(result.steps[0].group).toBe(result.groups[0]);
+    expect(result.steps[1].title).toBe('Metrics propagation');
+    expect(result.steps[1].description).toBe('When refreshFarmSeasonMetrics rehydrates a Season entity, it now carries name and activeMatingEndDate through.');
+    expect(result.steps[1].files).toEqual(['src/metrics/farm-season-metrics.service.ts', 'src/metrics/farm-season-metrics.service.spec.ts']);
+    expect(result.steps[1].group).toBe(result.groups[1]);
+  });
+
+  it('handles mixed groups: some with #### steps, some without', () => {
+    const comment = `## PR Walkthrough
+
+### Schema and DTO foundations
+
+#### Database migration
+Adds nullable columns.
+- \`src/migrations/001.ts\`
+
+#### Entity and DTOs
+- \`src/entity.ts\`
+
+### Metrics propagation
+Directly under the group, no #### steps.
+- \`src/metrics/service.ts\`
+
+### End-to-end coverage
+Also no #### steps.
+- \`test/e2e.ts\``;
+
+    const result = parseWalkthroughComment(comment);
+
+    expect(result.groups).toHaveLength(3);
+    expect(result.groups[0].title).toBe('Schema and DTO foundations');
+    expect(result.groups[1].title).toBe('Metrics propagation');
+    expect(result.groups[2].title).toBe('End-to-end coverage');
+
+    // Group 1 has 2 steps, Groups 2 and 3 are promoted to 1 step each
+    expect(result.steps).toHaveLength(4);
+    expect(result.steps[0].title).toBe('Database migration');
+    expect(result.steps[0].group).toBe(result.groups[0]);
+    expect(result.steps[1].title).toBe('Entity and DTOs');
+    expect(result.steps[1].group).toBe(result.groups[0]);
+    expect(result.steps[2].title).toBe('Metrics propagation');
+    expect(result.steps[2].group).toBe(result.groups[1]);
+    expect(result.steps[2].files).toEqual(['src/metrics/service.ts']);
+    expect(result.steps[3].title).toBe('End-to-end coverage');
+    expect(result.steps[3].group).toBe(result.groups[2]);
+    expect(result.steps[3].files).toEqual(['test/e2e.ts']);
+  });
 });

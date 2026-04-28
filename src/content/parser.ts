@@ -10,6 +10,9 @@ export function isWalkthroughComment(body: string): boolean {
 }
 
 function detectGroupedMode(lines: string[]): boolean {
+  // Grouped mode requires at least one #### heading.
+  // Multiple ### headings without #### is still flat mode
+  // (each ### is just a step, not a group container).
   let pastHeader = false;
   for (const line of lines) {
     if (!pastHeader) {
@@ -67,7 +70,7 @@ function parseFlat(lines: string[]): WalkthroughData {
 function parseGrouped(lines: string[]): WalkthroughData {
   const groups: Group[] = [];
   const steps: Step[] = [];
-  let currentGroup: { title: string; descriptionLines: string[]; finalized: boolean } | null = null;
+  let currentGroup: { title: string; descriptionLines: string[]; files: string[]; finalized: boolean } | null = null;
   let currentStep: { title: string; descriptionLines: string[]; files: string[] } | null = null;
   let pastHeader = false;
 
@@ -82,16 +85,30 @@ function parseGrouped(lines: string[]): WalkthroughData {
       // Save previous step
       if (currentStep && currentGroup && currentGroup.finalized) {
         steps.push(finalizeStep(currentStep, steps.length + 1, groups[groups.length - 1]));
+        currentStep = null;
       }
-      currentStep = null;
 
-      // Finalize previous group if it exists and wasn't finalized yet
+      // Finalize previous group. If it had no steps, promote it to a step
+      // so groups like "Metrics propagation" (### with no #### underneath)
+      // are still clickable in the sidebar.
       if (currentGroup && !currentGroup.finalized) {
         groups.push(finalizeGroup(currentGroup));
         currentGroup.finalized = true;
+
+        // If no h4 step was created under this group, treat the group itself as a step
+        if (!currentStep) {
+          const groupRef = groups[groups.length - 1];
+          steps.push({
+            number: steps.length + 1,
+            title: currentGroup.title,
+            description: currentGroup.descriptionLines.join('\n'),
+            files: currentGroup.files,
+            group: groupRef,
+          });
+        }
       }
 
-      currentGroup = { title: h3[1].trim(), descriptionLines: [], finalized: false };
+      currentGroup = { title: h3[1].trim(), descriptionLines: [], files: [], finalized: false };
       continue;
     }
 
@@ -116,11 +133,16 @@ function parseGrouped(lines: string[]): WalkthroughData {
 
     const file = line.match(FILE_ITEM);
     if (file) {
-      if (currentStep) currentStep.files.push(file[1]);
+      if (currentStep) {
+        currentStep.files.push(file[1]);
+      } else if (currentGroup) {
+        // Files listed directly under a group (no #### step) belong to the group
+        currentGroup.files.push(file[1]);
+      }
     } else if (line.trim() !== '') {
       if (currentStep && currentStep.files.length === 0) {
         currentStep.descriptionLines.push(line.trim());
-      } else if (!currentStep && currentGroup) {
+      } else if (!currentStep && currentGroup && currentGroup.files.length === 0) {
         currentGroup.descriptionLines.push(line.trim());
       }
     }
@@ -129,6 +151,19 @@ function parseGrouped(lines: string[]): WalkthroughData {
   // Save final group and step
   if (currentGroup && !currentGroup.finalized) {
     groups.push(finalizeGroup(currentGroup));
+    currentGroup.finalized = true;
+
+    // Promote group to step if it had no h4 steps
+    if (!currentStep) {
+      const groupRef = groups[groups.length - 1];
+      steps.push({
+        number: steps.length + 1,
+        title: currentGroup.title,
+        description: currentGroup.descriptionLines.join('\n'),
+        files: currentGroup.files,
+        group: groupRef,
+      });
+    }
   }
   if (currentStep && groups.length > 0) {
     steps.push(finalizeStep(currentStep, steps.length + 1, groups[groups.length - 1]));
