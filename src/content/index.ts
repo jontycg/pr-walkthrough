@@ -267,18 +267,30 @@ window.addEventListener('popstate', onNavigation);
 // Filter to only real navigations — GitHub fires pushState for scroll tracking too.
 let lastUrl = location.href;
 window.addEventListener('pushState', () => {
-  if (location.href !== lastUrl) {
+  // Ignore hash-only changes (clicking a file in the tree) that stay on the
+  // same base URL. Only trigger onNavigation for real page changes.
+  const currentBase = location.href.split('#')[0];
+  const lastBase = lastUrl.split('#')[0];
+
+  if (currentBase !== lastBase) {
     lastUrl = location.href;
     onNavigation();
+  } else {
+    lastUrl = location.href;
   }
 });
 
-// Also patch replaceState as a fallback (may be overwritten by GitHub too)
+// Also patch replaceState as a fallback
 const origReplaceState = history.replaceState.bind(history);
 history.replaceState = function (...args) {
   origReplaceState(...args);
-  if (location.href !== lastUrl) {
+  const currentBase = location.href.split('#')[0];
+  const lastBase = lastUrl.split('#')[0];
+
+  if (currentBase !== lastBase) {
     lastUrl = location.href;
     onNavigation();
+  } else {
+    lastUrl = location.href;
   }
 };
